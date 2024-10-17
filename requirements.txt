@@ -3,3 +3,5 @@ flask
 python-docx
 fpdf2
 werkzeug (included in Flask)
+pandas
+Pillow
