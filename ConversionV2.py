@@ -6,6 +6,9 @@ from docx import Document
 from fpdf import FPDF
 import pandas as pd
 from PIL import Image
+import win32com.client
+from pywintypes import com_error
+import pythoncom
 
 app = Flask(__name__)
 
@@ -38,26 +41,24 @@ def convert_image_to_pdf(image_path, pdf_path):
     pdf.output(pdf_path)
 
 def convert_excel_to_pdf(excel_path, pdf_path):
-    df = pd.read_excel(excel_path)
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font('Arial', size=10)
-
-    col_width = pdf.w / len(df.columns)
-    row_height = 10
-
-    for column in df.columns:
-        pdf.cell(col_width, row_height, str(column), border=1, align='C')
-    pdf.ln(row_height)
-
-    for index, row in df.iterrows():
-        for value in row:
-            text = str(value)
-            pdf.cell(col_width, row_height, text, border=1, align='C')
-        pdf.ln(row_height)
-
-    pdf.output(pdf_path)
+    pythoncom.CoInitialize()  # Initialize COM library
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = False
+    try:
+        wb = excel.Workbooks.Open(excel_path)
+        temp_pdf_path = os.path.join(tempfile.gettempdir(), os.path.basename(pdf_path))
+        wb.WorkSheets.Select()
+        wb.ActiveSheet.ExportAsFixedFormat(0, temp_pdf_path)
+        # Move the temporary PDF to the desired location
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        os.rename(temp_pdf_path, pdf_path)
+    except com_error as e:
+        print('Excel to PDF conversion failed:', e)
+    finally:
+        wb.Close(SaveChanges=False)
+        excel.Quit()
+        pythoncom.CoUninitialize()  # Uninitialize COM library
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
