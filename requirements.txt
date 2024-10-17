@@ -1,4 +1,4 @@
-Summary of Dependencies:
+Install these requirements
 flask
 python-docx
 fpdf2
