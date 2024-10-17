@@ -6,3 +6,4 @@ werkzeug (included in Flask)
 pandas
 Pillow
 openpyxl
+pywin32
